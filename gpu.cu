@@ -6,6 +6,7 @@
 #include <unistd.h>
 
 #include "info.h"
+#include "gpu.h"
 
 typedef struct board {
   int cells[BOARD_DIM * BOARD_DIM];
@@ -27,6 +28,10 @@ __global__ void check_cell(board_t* board) {
   
   // Keep trying to update the cell if the block has progress
   while (__syncthreads_or(cur_ret) == 0) {
+    if (cur_cell == 0) {
+      continue;
+    }
+   
     // Check row success
     int row_s = cur_cell;
     for (int c = x - 2; c <= x + 2; c++) {
@@ -65,7 +70,7 @@ __global__ void check_cell(board_t* board) {
       if (c < 0 || c >= BOARD_DIM ||
           r < 0 || r >= BOARD_DIM ||
           board->cells[r * BOARD_DIM + c] != cur_cell) {
-        rl_s = 0;
+        lr_s = 0;
       }
     }
 
@@ -85,7 +90,7 @@ __global__ void check_cell(board_t* board) {
       status_d = complete;
     } else if (cur_ret != 0) {
       status_d = cur_cell;
-      printf("cur cell is %d\n", status_d);
+      printf("cur cell is (%d, %d, %d, %d)\n", row_s, col_s, rl_s, lr_s);
     }
   }
   return;
@@ -101,7 +106,7 @@ void check_board(int** board) {
   }
 
   // Copy board to gpus
-  if(cudaMemcpy(gpu_board, board, sizeof(board_t), cudaMemcpyHostToDevice) != cudaSuccess) {
+  if(cudaMemcpy(gpu_board, *board, sizeof(board_t), cudaMemcpyHostToDevice) != cudaSuccess) {
     fprintf(stderr, "Failed to copy board to the GPU\n");
     exit(2);
   }
@@ -118,7 +123,7 @@ void check_board(int** board) {
   // Update status
   int status_h;
   cudaMemcpyFromSymbol(&status_h, status_d, sizeof(status_d), 0, cudaMemcpyDeviceToHost);
-  printf("The results shows that %d wins\n", status_h);
+  printf("The results shows that player %d wins\n", status_h);
 
   // Free the gpu memory
   cudaFree(gpu_board);
@@ -128,10 +133,11 @@ void check_board(int** board) {
 //Test
 int main(int argc, char** argv) {
   int test[10][10] = {0};
-  test[1][1] = 1;
-  test[2][2] = 1;
-  test[3][3] = 1;
-  test[4][4] = 1;
+  test[1][1] = 2;
+  test[2][2] = 2;
+  test[3][3] = 2;
+  test[4][4] = 2;
+  test[5][5] = 2;
   int* p = (int*) test;
   check_board(&p);
 
