@@ -22,7 +22,6 @@
 #define READ_OPPONENT_INTERVAL 150 
 #define READ_INPUT_INTERVAL 150
 #define BOARD_WIDTH 10
-#define BOARD_HEIGHT 10
 
 #define WIN 1
 #define PAR 0
@@ -33,7 +32,7 @@
  * 0 represents a white piece
  * 1 represents a black piece
  */
-int board[BOARD_HEIGHT][BOARD_WIDTH];
+int board[BOARD_DIM][BOARD_DIM];
 
 // 1 for win, 0 for par, -1 for lose
 int win;
@@ -44,6 +43,9 @@ bool host;
 bool running = false;
 // Is it my turn?
 bool myturn;
+
+// current location of user cursor 
+int cur_r=BOARD_DIM/2,cur_c=BOARD_DIM/2;
 
 /**
  * Convert a board row number to a screen position
@@ -305,46 +307,75 @@ int main(void) {
   noecho();               // Don't print keys when pressed
   keypad(mainwin, true);  // Support arrow keys
   nodelay(mainwin, true); // Non-blocking keyboard access
-  
-  // Initialize the game display
-  init_display();
-  
+
+  // Check the argument number is correct
+  if(argc != 1 && argc != 3) {
+      fprintf(stderr, "Usage: %s [<host name> <port number>]\n", argv[0]);
+      exit(1);
+  }
+
+  int server_socket_fd;
+  int server_port;
+  int socket_fd;
+
+  // Check whether we want to connect to other game room
+  if(argc == 3) {
+      host=false;
+      // Unpack arguments
+      char* peer_hostname = argv[1];
+      unsigned short peer_port = atoi(argv[2]);
+      join_game_room(peer_hostname, peer_port, &socket_fd);
+  } else {
+      host=true;
+      open_game_room(&server_port, &server_socket_fd);
+      // Initialize the home game display
+      init_home(server_port);
+      // Accept connection
+      accept_connection(server_socket_fd, &socket_fd);
+  }
+
   // Zero out the board contents
-  memset(board, 0, BOARD_WIDTH*BOARD_HEIGHT*sizeof(int));
-  
-  // Put the worm at the middle of the board
-  board[BOARD_HEIGHT/2][BOARD_WIDTH/2] = 1;
-  
+  memset(board, BLANK, BOARD_DIM*BOARD_DIM*sizeof(int));
+
+  if (host) {
+      myturn=true;
+      // Put the host's piece at the middle of the board
+      board[BOARD_DIM/2][BOARD_DIM/2] = HOST;
+  } else {
+      myturn=false;
+  }
+
+  // Display the game board
+  draw_board();
+
   // Thread handles for each of the game threads
-  task_t update_worm_thread;
-  task_t draw_board_thread;
+  task_t update_board_thread;
   task_t read_input_thread;
   task_t update_apples_thread;
-  task_t generate_apple_thread;
-  
+
   // Initialize the scheduler library
   scheduler_init();
-  
+
   // Create threads for each task in the game
   task_create(&update_worm_thread, update_worm);
   task_create(&draw_board_thread, draw_board);
   task_create(&read_input_thread, read_input);
   task_create(&update_apples_thread, update_apples);
   task_create(&generate_apple_thread, generate_apple);
-  
+
   // Wait for these threads to exit
   task_wait(update_worm_thread);
   task_wait(draw_board_thread);
   task_wait(read_input_thread);
   task_wait(update_apples_thread);
-  
+
   // Don't wait for the generate_apple task because it sleeps for 2 seconds,
   // which creates a noticeable delay when exiting.
   //task_wait(generate_apple_thread);
-  
+
   // Display the end of game message and wait for user input
   end_game();
-  
+
   // Clean up window
   delwin(mainwin);
   endwin();

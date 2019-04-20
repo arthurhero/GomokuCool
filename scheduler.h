@@ -4,7 +4,7 @@
 #include <stddef.h>
 
 /// This is the type of a function run in a scheduler task
-typedef void (*task_fn_t)();
+typedef void (*task_fn_t)(void *input);
 
 /// Outside code should use values of type task_t to refer to specific tasks.
 /// These will just be an index in our large array of tasks.
