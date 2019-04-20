@@ -1,0 +1,140 @@
+#include <stdbool.h>
+#include <stdint.h>
+#include <stdio.h>
+#include <stdlib.h>
+#include <string.h>
+#include <unistd.h>
+
+#include "info.h"
+
+typedef struct board {
+  int cells[BOARD_DIM * BOARD_DIM];
+} board_t;
+
+__device__ int status_d;
+
+__global__ void check_cell(board_t* board) {
+  int x = threadIdx.x;
+  int y = threadIdx.y;
+  
+  // Calculate current cell id in the board
+  int cell_id = y * BOARD_DIM + x;
+ 
+  // Get the current cell
+  int cur_cell = board->cells[cell_id];
+  
+  int cur_ret = 0;
+  
+  // Keep trying to update the cell if the block has progress
+  while (__syncthreads_or(cur_ret) == 0) {
+    // Check row success
+    int row_s = cur_cell;
+    for (int c = x - 2; c <= x + 2; c++) {
+      if (c < 0 || c >= BOARD_DIM ||
+          board->cells[y * BOARD_DIM + c] != cur_cell) {
+        row_s = 0;
+      }
+    }
+    
+    // Check col success
+    int col_s = cur_cell;
+    for (int r = x - 2; r <= x + 2; r++) {
+      if (r < 0 || r >= BOARD_DIM ||
+          board->cells[r * BOARD_DIM + x] != cur_cell) {
+        col_s = 0;
+      }
+    }
+
+    // Check / success
+    int rl_s = cur_cell;
+    for (int i = - 2; i <= 2; i++) {
+      int c = x + i;
+      int r = x - i;
+      if (c < 0 || c >= BOARD_DIM ||
+          r < 0 || r >= BOARD_DIM ||
+          board->cells[r * BOARD_DIM + c] != cur_cell) {
+        rl_s = 0;
+      }
+    }
+    
+    // Check \ success
+    int lr_s = cur_cell;
+    for (int i = - 2; i <= 2; i++) {
+      int c = x + i;
+      int r = x + i;
+      if (c < 0 || c >= BOARD_DIM ||
+          r < 0 || r >= BOARD_DIM ||
+          board->cells[r * BOARD_DIM + c] != cur_cell) {
+        rl_s = 0;
+      }
+    }
+
+    // Check complete
+    int complete = 4;
+    for (int r = 0; r < BOARD_DIM; r++) {
+      for(int c = 0; c < BOARD_DIM; c++) {
+        if (board->cells[r * BOARD_DIM + c] == 0) {
+          complete = 0;
+        }
+      }
+    }
+
+    // Compile results
+    cur_ret = row_s | col_s | rl_s | lr_s | complete;
+    if (complete == 4) {
+      status_d = complete;
+    } else if (cur_ret != 0) {
+      status_d = cur_cell;
+      printf("cur cell is %d\n", status_d);
+    }
+  }
+  return;
+}
+
+
+void check_board(int** board) {
+  // Malloc memory in gpu
+  board_t* gpu_board;
+  if (cudaMalloc(&gpu_board, sizeof(board_t)) != cudaSuccess) {
+    fprintf(stderr, "Failed to allocate the board\n");
+    exit(2);
+  }
+
+  // Copy board to gpus
+  if(cudaMemcpy(gpu_board, board, sizeof(board_t), cudaMemcpyHostToDevice) != cudaSuccess) {
+    fprintf(stderr, "Failed to copy board to the GPU\n");
+    exit(2);
+  }
+
+  // Solve the boards
+  check_cell<<<1,dim3(BOARD_DIM, BOARD_DIM)>>>(gpu_board);
+
+  // Wait until it is finished
+  if(cudaDeviceSynchronize() != cudaSuccess) {
+    fprintf(stderr, "CUDA Error: %s\n", cudaGetErrorString(cudaPeekAtLastError()));
+    exit(2);
+  }
+
+  // Update status
+  int status_h;
+  cudaMemcpyFromSymbol(&status_h, status_d, sizeof(status_d), 0, cudaMemcpyDeviceToHost);
+  printf("The results shows that %d wins\n", status_h);
+
+  // Free the gpu memory
+  cudaFree(gpu_board);
+}
+
+
+//Test
+int main(int argc, char** argv) {
+  int test[10][10] = {0};
+  test[1][1] = 1;
+  test[2][2] = 1;
+  test[3][3] = 1;
+  test[4][4] = 1;
+  int* p = (int*) test;
+  check_board(&p);
+
+  return 0;
+}
+
