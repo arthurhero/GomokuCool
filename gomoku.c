@@ -10,22 +10,10 @@
 
 #include "scheduler.h"
 #include "util.h"
+#include "gpu.h"
+#include "info.h"
+#include "network.h"
 
-// Defines used to track the piece direction
-#define DIR_NORTH 0
-#define DIR_EAST 1
-#define DIR_SOUTH 2
-#define DIR_WEST 3
-
-// Game parameters
-#define DRAW_BOARD_INTERVAL 250 
-#define READ_OPPONENT_INTERVAL 150 
-#define READ_INPUT_INTERVAL 150
-#define BOARD_WIDTH 10
-
-#define WIN 1
-#define PAR 0
-#define LOSE -1
 
 /**
  * In-memory representation of the game board
@@ -34,8 +22,8 @@
  */
 int board[BOARD_DIM][BOARD_DIM];
 
-// 1 for win, 0 for par, -1 for lose
-int win;
+// status of winning or losing
+int status;
 
 // Are you the host? (host always use white piece and start first)
 bool host;
