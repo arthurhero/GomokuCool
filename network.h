@@ -1,6 +1,5 @@
 #include <stdbool.h>
 #include <stdio.h>
-ffline=false;
 #include <stdlib.h>
 #include <string.h>
 #include <unistd.h>
@@ -47,7 +46,7 @@ static void accept_connection(int server_socket_fd, int *client_socket_fd) {
 
 // receive opponent input: row and col
 // if fail to get input, set offline to true
-static void get_opponent_input(int client_socket_fd, int *r, int *c, bool *offline) {
+static void get_opponent_input(int client_socket_fd, int *r, int *c, bool *offline, int* result) {
     ssize_t rc;
     rc=read(client_socket_fd, r, sizeof(int));
     if (rc==-1 || rc==0) {
@@ -74,6 +73,13 @@ static void get_opponent_input(int client_socket_fd, int *r, int *c, bool *offli
         *offline=true;
         return;
     }
+    rc=read(client_socket_fd, result, sizeof(int));
+    if (rc==-1 || rc==0) {
+        close(client_socket_fd);
+        *offline=true;
+        return;
+    }
+
     *offline=false;
     return;
 }
@@ -81,7 +87,7 @@ static void get_opponent_input(int client_socket_fd, int *r, int *c, bool *offli
 //send row and col number to opponent
 // if we quit, send -1
 // if cannot send, set offline to true
-static void send_input(int client_fd, int r, int c, bool *offline) {
+static void send_input(int client_fd, int r, int c, bool *offline, int result) {
     ssize_t rc;
     rc=write(client_fd,&r,sizeof(int));
     if (rc==-1) {
@@ -99,6 +105,12 @@ static void send_input(int client_fd, int r, int c, bool *offline) {
         close(client_fd);
         *offline=true;
         return;
+    }
+    rc=write(client_fd,&result,sizeof(int));
+    if (rc == -1) {
+      close(client_fd);
+      *offline=true;
+      return;
     }
     *offline=false;
     return;
