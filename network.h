@@ -1,6 +1,5 @@
 #include <stdbool.h>
 #include <stdio.h>
-ffline=false;
 #include <stdlib.h>
 #include <string.h>
 #include <unistd.h>
