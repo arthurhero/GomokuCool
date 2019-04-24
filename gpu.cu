@@ -97,7 +97,7 @@ __global__ void check_cell(board_t* board) {
 }
 
 
-void check_board(int** board) {
+int check_board(int** board) {
   // Malloc memory in gpu
   board_t* gpu_board;
   if (cudaMalloc(&gpu_board, sizeof(board_t)) != cudaSuccess) {
@@ -127,6 +127,7 @@ void check_board(int** board) {
 
   // Free the gpu memory
   cudaFree(gpu_board);
+  return status_h;
 }
 
 
@@ -139,7 +140,8 @@ int main(int argc, char** argv) {
   test[4][4] = 2;
   test[5][5] = 2;
   int* p = (int*) test;
-  check_board(&p);
+  int res = check_board(&p);
+  printf("this is a test in main function. Winner is %d\n", res);
 
   return 0;
 }

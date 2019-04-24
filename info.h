@@ -1,3 +1,7 @@
+#ifndef INFO_H
+#define INFO_H
+
+
 #define RUNNING 0
 #define HOST_WIN 1
 #define GUEST_WIN 2
@@ -52,3 +56,5 @@ typedef struct send_info {
     int c;
     int status;
 } send_info_s;
+
+#endif
