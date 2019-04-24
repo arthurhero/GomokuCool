@@ -104,10 +104,12 @@ int main(void) {
   // input for update board
   game_stat_s *gstat = (game_stat_s *)malloc(sizeof(game_stat_s));
   gstat->host = &host;
+  gstat->myturn= &myturn;
   gstat->status= &status;
   gstat->cur_c = &cur_c;
   gstat->cur_r = &cur_r;
-  gstat->board = &board;
+  gstat->op_c = &op_c;
+  gstat->op_r = &op_r;
   // create thread for update board
   rc = pthread_create(&(update_board_thread),NULL,draw_board,gstat);
   if (rc) {
@@ -139,9 +141,48 @@ int main(void) {
   }
 
   while (status==RUNNING) {
+      if (myinput == QUIT) {
+          status=WAITING;
+          break;
+      }
+      if (myturn) {
+          if (myinput == RIGHT && cur_c<BOARD_DIM-1) cur_c++;
+          else if (myinput == LEFT && cur_c>0) cur_c--;
+          else if (myinput == UP && cur_r>0) cur_r--;
+          else if (myinput == DOWN && cur_r<BOARD_DIM-1) cur_r++;
+          else if (myinput == ENTER) {
+              if (host) board[cur_r][cur_c]=HOST;
+              else board[cur_r][cur_c]=GUEST;
+              int result = check_board(board);
+              if (result == HOST_WIN || result == GUEST_WIN || result == DRAW) {
+                  status = result;
+                  break;
+              }
+          }
+          myinput=NONE;
+          myturn = false;
+      } else {
+          if (op_offline) {
+              status=WAITING;
+              break;
+          } else {
+              int result = op_status;
+              if (result == HOST_WIN || result == GUEST_WIN || result == DRAW) {
+                  status = result;
+                  break;
+              } else {
+                  if (host) board[op_r][op_c]=GUEST;
+                  else board[op_r][op_c]=HOST;
+              }
+          }
+      }
   }
 
-  end_game();
+  end_game(status);
+  sleep(5);
+
+  //TODO: if guest, change to host, open game room
+
 
   // Clean up window
   delwin(mainwin);

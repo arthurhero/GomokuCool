@@ -1,3 +1,4 @@
+// game status
 #define RUNNING 0
 #define HOST_WIN 1
 #define GUEST_WIN 2
@@ -13,6 +14,7 @@
 #define BOARD_WIDTH 4
 
 // Defines user inputs 
+#define NONE -1
 #define UP 0
 #define RIGHT 1
 #define DOWN 2
@@ -24,11 +26,14 @@
 
 // structs for task methods
 typedef struct game_stat {
-    bool *host;
+    bool *host; //is this user the host?
+    bool *myturn; //is this user's turn?
+    bool *bracket; //draw bracket?
     int *status; //running or host win or guest win or draw
     int *cur_c;
     int *cur_r;
-    int **board;
+    int *op_c;  // where the opponent placed a piece
+    int *op_r;
 } game_stat_s;
 
 // struct for read input
