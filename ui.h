@@ -1,3 +1,6 @@
+#ifndef UI_H
+#define UI_H
+
 #include <curses.h>
 #include <stdbool.h>
 #include <stdint.h>
@@ -35,4 +38,4 @@ void read_input();
 void update_piece();
 
 
-
+#endif

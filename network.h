@@ -1,3 +1,6 @@
+#ifndef NETWORK_H
+#define NETWORK_H
+
 #include <stdbool.h>
 #include <stdio.h>
 #include <stdlib.h>
@@ -115,3 +118,5 @@ static void send_input(int client_fd, int r, int c, bool *offline, int result) {
     *offline=false;
     return;
 }
+
+#endif

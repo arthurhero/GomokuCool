@@ -11,7 +11,7 @@
 #include "info.h"
 
 // check if the current game has a winner
-void check_board(int** board);
+int check_board(int** board);
 
 
 
