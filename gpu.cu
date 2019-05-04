@@ -4,7 +4,6 @@
 #include <stdlib.h>
 #include <string.h>
 #include <unistd.h>
-
 #include "info.h"
 #include "gpu.h"
 
@@ -26,7 +25,7 @@ __global__ void check_cell(board_t* board) {
   
   int cur_ret = 0;
   
-  // Keep trying to update the cell if the block has progress
+  // Keep trying to update the cell until the block has progress
   while (__syncthreads_or(cur_ret) == 0) {
     if (cur_cell == 0) {
       continue;
@@ -97,7 +96,7 @@ __global__ void check_cell(board_t* board) {
 }
 
 
-int check_board(int** board) {
+void check_board(int** board, int* res) {
   // Malloc memory in gpu
   board_t* gpu_board;
   if (cudaMalloc(&gpu_board, sizeof(board_t)) != cudaSuccess) {
@@ -127,22 +126,22 @@ int check_board(int** board) {
 
   // Free the gpu memory
   cudaFree(gpu_board);
-  return status_h;
+  *res = status_h;
 }
 
 
 //Test
 int main(int argc, char** argv) {
-  int test[10][10] = {0};
+  int test[BOARD_DIM][BOARD_DIM] = {0};
   test[1][1] = 2;
   test[2][2] = 2;
   test[3][3] = 2;
   test[4][4] = 2;
   test[5][5] = 2;
   int* p = (int*) test;
-  int res = check_board(&p);
+  int res;
+  check_board(&p, &res);
   printf("this is a test in main function. Winner is %d\n", res);
-
   return 0;
 }
 
