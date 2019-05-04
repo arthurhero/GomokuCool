@@ -16,7 +16,7 @@
 #define BOARD_HEIGHT 2
 #define BOARD_WIDTH 4
 
-// Defines user inputs 
+// Defines user inputs
 #define NONE -1
 #define UP 0
 #define RIGHT 1
@@ -29,13 +29,13 @@
 
 // structs for task methods
 typedef struct game_stat {
-    bool *host; //is this user the host?
-    bool *myturn; //is this user's turn?
+    bool *host; //is this user the host? used to deterine the piece pattern, 1 for ishost, 0 for notHost
+    bool *myturn; //is this user's turn? 1 stands for yes, 0 for no
     bool *bracket; //draw bracket?
     int *status; //running or host win or guest win or draw
     int *cur_c;
     int *cur_r;
-    int *op_c;  // where the opponent placed a piece
+    int *op_c;  // where the opponent placed a piece, the value is -1 if we are in the first round
     int *op_r;
 } game_stat_s;
 

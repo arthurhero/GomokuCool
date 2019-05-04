@@ -10,20 +10,6 @@
 
 #include "info.h"
 
-
-// structs for task methods
-typedef struct game_stat {
-    bool *host;
-    int *status; //running or host win or guest win or draw
-    int *cur_c;
-    int *cur_r;
-    bool *bracket;
-    int **board;
-} game_stat_s;
-
-//int board[BOARD_DIM][BOARD_DIM];
-//#define BOARD_DIM 13
-
 /**
  * Convert a board row number to a screen position
  * \param   row   The board row number to convert
@@ -155,49 +141,86 @@ void* draw_board(void* stat){
   game_stat_s* game_stat = (game_stat_s*)stat;
 
   int toggle_turn = false;
-  bool last_myturn = *game_stat->myturn;
-  int last_row = *game_stat->cur_c;
-  int last_col = *game_stat->cur_r;
+  bool prev_my_turn = *game_stat->myturn;
+  int prev_row = *game_stat->cur_c;
+  int prev_col = *game_stat->cur_r;
 
   // Keep updataing the board while the game is running
-  while(state == RUNNING){
-    if(my_turn != last_myturn) {
+  while(game_stat->status == RUNNING){
+
+    // Determine if we just changed player
+    if(*game_stat->myturn != prev_my_turn) {
       toggle_turn = true;
     }else{
       toggle_turn = false;
     }
 
     // Update game status
-    int status = *game_stat->status;
     bool draw_bracket = *game_stat->bracket;
     bool my_turn = *game_stat->myturn;
     int cur_col = *game_stat->cur_c;
     int cur_row = *game_stat->cur_r;
 
     if(my_turn){
-      // move to the current position in board
-      move((cur_col+1)*4-1, (cur_row-2)/2);
+      // If the turn has not been toggled erase the previous [] we drew
+      if(!toggle_turn){
+        //First, move to the previous location
+        move((prev_col+1)*4-1, (prev_row-2)/2);
 
-      // Draw bracket
-      addch('[');
-      addch(' ');
-      addch(']');
+        //Next, draw blanks to cover the current [] that is there
+        addch(' ');
+        addch(' ');
+        addch(' ');
+      }
 
-    }else{
+      // Draw bracket or a piece
+      if(draw_bracket){
+        // move to the current position in board
+        move((cur_col+1)*4-1, (cur_row-2)/2);
+
+        // Draw bracket
+        addch('[');
+        addch(' ');
+        addch(']');
+
+      }else{ // draw piece
+        // move to the current position in board
+        move((cur_col+1)*4-1, (cur_row-2)/2);
+
+        bool host_piece = *game_stat->host;
+
+        if(host_piece){
+          addch('@');
+        }else{
+          addch('o');
+        }
+
+      }
+    }
+
+    // Repetitively draw opponent's piece
+      int op_col = *game_stat->op_c;
+      int op_row = *game_stat->op_r;
       // move to the current position in board
-      move((cur_col+1)*4, (cur_row-2)/2);
+      move((op_c+1)*4, (op_r-2)/2);
 
       bool host_piece = *game_stat->host;
 
+      // make sure that we are not in the first round (i.e. there is no opponent piece yet)
+      if(op_col != -1 && op_row != -1){
       // print piece
       if(host_piece){
         addch('@');
       }else{
         addch('o');
       }
-  }
+    }
+    
+  prev_my_turn = my_turn;
+  prev_col = cur_col;
+  prev_row = cur_row;
+  refresh();
  }
-
 
   return NULL;
 }
