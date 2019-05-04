@@ -11,7 +11,7 @@ typedef struct board {
   int cells[BOARD_DIM * BOARD_DIM];
 } board_t;
 
-__device__ int status_d;
+__device__ int status_d = 0;
 
 __global__ void check_cell(board_t* board) {
   int x = threadIdx.x;
@@ -22,11 +22,15 @@ __global__ void check_cell(board_t* board) {
  
   // Get the current cell
   int cur_cell = board->cells[cell_id];
+ 
+  // Flag the current cell as checked 
+  // 1 - unchecked
+  // 0 - checked
+  int cur_check = 1;
   
-  int cur_ret = 0;
-  
-  // Keep trying to update the cell until the block has progress
-  while (__syncthreads_or(cur_ret) == 0) {
+  // Keep checking the cell until all cells have been checked
+  while (__syncthreads_or(cur_check) != 0) {  
+    cur_check = 0;
     if (cur_cell == 0) {
       continue;
     }
@@ -84,12 +88,14 @@ __global__ void check_cell(board_t* board) {
     }
 
     // Compile results
-    cur_ret = row_s | col_s | rl_s | lr_s | complete;
+    int cur_ret = row_s | col_s | rl_s | lr_s | complete;
     if (complete == 4) {
       status_d = complete;
+      return;
     } else if (cur_ret != 0) {
       status_d = cur_cell;
       printf("cur cell is (%d, %d, %d, %d)\n", row_s, col_s, rl_s, lr_s);
+      return;
     }
   }
   return;
@@ -137,7 +143,7 @@ int main(int argc, char** argv) {
   test[2][2] = 2;
   test[3][3] = 2;
   test[4][4] = 2;
-  test[5][5] = 2;
+  //test[5][5] = 2;
   int* p = (int*) test;
   int res;
   check_board(&p, &res);
