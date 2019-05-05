@@ -80,6 +80,7 @@ int main(void) {
   // Zero out the board contents
   memset(board, BLANK, BOARD_DIM*BOARD_DIM*sizeof(int));
 
+  // Host play first
   if (host) {
       myturn=true;
   } else {
@@ -91,28 +92,22 @@ int main(void) {
   pthread_mutex_t over_m = PTHREAD_MUTEX_INITIALIZER;
   pthread_cond_t input_cv = PTHREAD_COND_INITIALIZER;
   pthread_mutex_t input_m = PTHREAD_MUTEX_INITIALIZER;
+  pthread_cond_t oppo_cv = PTHREAD_COND_INITIALIZER;
+  pthread_mutex_t oppo_m = PTHREAD_MUTEX_INITIALIZER;
 
   // Display the game board
   init_board();
 
   // Thread handles for each of the game threads
-  pthread_t update_board_thread;
   pthread_t read_input_thread;
   pthread_t read_opponent_thread; 
 
-  // variables for storing input opponent info
-  int myinput;
-  int op_r;
-  int op_c;
-  int op_stat;
-  bool op_offline;
-
-  // input for update board
+  // input for threads 
   game_stat_s *gstat = (game_stat_s *)malloc(sizeof(game_stat_s));
   gstat->host = &host;
+  gstat->board = board;
   gstat->myturn = &myturn;
   gstat->status = &status;
-  gstat->board = board;
   gstat->cur_c = &cur_c;
   gstat->cur_r = &cur_r;
   gstat->op_c = &op_c;
@@ -125,66 +120,25 @@ int main(void) {
   gstat->oppo_m = &oppo_m;
   gstat->client_fd = &socket_fd;
 
-  // create thread for update board
-  rc = pthread_create(&(update_board_thread),NULL,draw_board,gstat);
-  if (rc) {
-      perror("failed to create thread for update board");
-      exit(2);
-  }
-  // input struct for read input
-  user_input_s *user_input = (user_input_s *)malloc(sizeof(user_input_s));
-  user_input->status = &status;
-  user_input->input = &myinput;
   // create thread for read user input 
-  rc = pthread_create(&(read_input_thread),NULL,read_input,user_input);
+  rc = pthread_create(&(read_input_thread),NULL,read_input,gstat);
   if (rc) {
       perror("failed to create thread for read input");
       exit(2);
   }
   // create thread for get opponent info 
-  rc = pthread_create(&(read_opponent_thread),NULL,get_opponent_input,opinfo);
+  rc = pthread_create(&(read_opponent_thread),NULL,get_opponent_input,gstat);
   if (rc) {
-      perror("failed to create thread for read input");
+      perror("failed to create thread for read opponent info");
       exit(2);
   }
 
+  //wait for the game to end
+  pthread_mutex_lock(&over_m);
   while (status==RUNNING) {
-      if (myinput == QUIT) {
-          status=WAITING;
-          break;
-      }
-      if (myturn) {
-          if (myinput == RIGHT && cur_c<BOARD_DIM-1) cur_c++;
-          else if (myinput == LEFT && cur_c>0) cur_c--;
-          else if (myinput == UP && cur_r>0) cur_r--;
-          else if (myinput == DOWN && cur_r<BOARD_DIM-1) cur_r++;
-          else if (myinput == ENTER) {
-              if (host) board[cur_r][cur_c]=HOST;
-              else board[cur_r][cur_c]=GUEST;
-              int result = check_board(board);
-              if (result == HOST_WIN || result == GUEST_WIN || result == DRAW) {
-                  status = result;
-                  break;
-              }
-          }
-          myinput=NONE;
-          myturn = false;
-      } else {
-          if (op_offline) {
-              status=WAITING;
-              break;
-          } else {
-              int result = op_status;
-              if (result == HOST_WIN || result == GUEST_WIN || result == DRAW) {
-                  status = result;
-                  break;
-              } else {
-                  if (host) board[op_r][op_c]=GUEST;
-                  else board[op_r][op_c]=HOST;
-              }
-          }
-      }
+      pthread_cond_wait(&over_cv,&over_m);
   }
+  pthread_mutex_unlock(&over_m);
 
   end_game(status);
   sleep(5);
