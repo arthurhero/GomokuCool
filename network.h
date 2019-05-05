@@ -55,20 +55,20 @@ static void* get_opponent_input(void *arg) {
     ssize_t rc;
     while (*game_stat->status==RUNNING) {
         if (!(*game_stat->myturn)) {
-            rc=read(*game_stat->client_fd, *(game_stat->op_r), sizeof(int));
+            rc=read(*game_stat->client_fd, game_stat->op_r, sizeof(int));
             if (rc==-1 || rc==0) {
                 //if the opponent is offline
                 close(*game_stat->client_fd);
                 *game_stat->status=WAITING;
                 break;
             }
-            rc=read(*game_stat->client_fd, *(game_stat->op_c), sizeof(int));
+            rc=read(*game_stat->client_fd, game_stat->op_c, sizeof(int));
             if (rc==-1 || rc==0) {
                 close(*game_stat->client_fd);
                 *game_stat->status=WAITING;
                 break;
             }
-            rc=read(*game_stat->client_fd, *(game_stat->status), sizeof(int));
+            rc=read(*game_stat->client_fd, game_stat->status, sizeof(int));
             if (rc==-1 || rc==0) {
                 close(*game_stat->client_fd);
                 *game_stat->status=WAITING;
