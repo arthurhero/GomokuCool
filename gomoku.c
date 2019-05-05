@@ -9,7 +9,7 @@
 #include <unistd.h>
 #include <pthread.h>
 
-#include "util.h"
+#include "socket.h"
 #include "gpu.h"
 #include "info.h"
 #include "network.h"
