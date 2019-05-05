@@ -86,6 +86,10 @@ int main(void) {
       myturn=false;
   }
 
+  // locks and cond variables
+  pthread_cond_t over = PTHREAD_COND_INITIALIZER;
+  pthread_mutex_t over_m = PTHREAD_MUTEX_INITIALIZER;
+
   // Display the game board
   init_board();
 
@@ -104,12 +108,21 @@ int main(void) {
   // input for update board
   game_stat_s *gstat = (game_stat_s *)malloc(sizeof(game_stat_s));
   gstat->host = &host;
-  gstat->myturn= &myturn;
-  gstat->status= &status;
+  gstat->myturn = &myturn;
+  gstat->status = &status;
+  gstat->board = board;
   gstat->cur_c = &cur_c;
   gstat->cur_r = &cur_r;
   gstat->op_c = &op_c;
   gstat->op_r = &op_r;
+  gstat->over_cv = &over_cv;
+  gstat->over_m = &over_m;
+  gstat->input_cv = &input_cv;
+  gstat->input_m = &input_m;
+  gstat->oppo_cv = &oppo_cv;
+  gstat->oppo_m = &oppo_m;
+  gstat->client_fd = &socket_fd;
+
   // create thread for update board
   rc = pthread_create(&(update_board_thread),NULL,draw_board,gstat);
   if (rc) {
@@ -126,13 +139,6 @@ int main(void) {
       perror("failed to create thread for read input");
       exit(2);
   }
-  // input for get opponent input
-  op_info_s *opinfo = (op_info_s *)malloc(sizeof(op_info_s));
-  opinfo->status = &status;
-  opinfo->r = &op_r;
-  opinfo->c = &op_c;
-  opinfo->op_status = &op_stat;
-  opinfo->offline = &op_offline;
   // create thread for get opponent info 
   rc = pthread_create(&(read_opponent_thread),NULL,get_opponent_input,opinfo);
   if (rc) {
