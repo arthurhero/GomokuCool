@@ -1,5 +1,5 @@
 CC := clang
-CFLAGS := -g -Wall -Wno-deprecated-declarations -Werror
+CFLAGS := -g -Wno-deprecated-declarations -Werror
 
 all: ui
 
