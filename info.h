@@ -32,7 +32,6 @@ typedef struct game_stat {
     bool *host; //is this user the host? used to deterine the piece pattern, 1 for ishost, 0 for notHost
     int **board;
     bool *myturn; //is this user's turn? 1 stands for yes, 0 for no
-    bool *bracket; //draw bracket?
     int *status; //running or host win or guest win or draw
     int *cur_c;
     int *cur_r;
