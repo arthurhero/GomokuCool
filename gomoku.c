@@ -87,8 +87,10 @@ int main(void) {
   }
 
   // locks and cond variables
-  pthread_cond_t over = PTHREAD_COND_INITIALIZER;
+  pthread_cond_t over_cv = PTHREAD_COND_INITIALIZER;
   pthread_mutex_t over_m = PTHREAD_MUTEX_INITIALIZER;
+  pthread_cond_t input_cv = PTHREAD_COND_INITIALIZER;
+  pthread_mutex_t input_m = PTHREAD_MUTEX_INITIALIZER;
 
   // Display the game board
   init_board();
