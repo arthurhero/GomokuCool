@@ -30,6 +30,7 @@
 // structs for task methods
 typedef struct game_stat {
     bool *host; //is this user the host? used to deterine the piece pattern, 1 for ishost, 0 for notHost
+    int **board;
     bool *myturn; //is this user's turn? 1 stands for yes, 0 for no
     bool *bracket; //draw bracket?
     int *status; //running or host win or guest win or draw
@@ -37,6 +38,13 @@ typedef struct game_stat {
     int *cur_r;
     int *op_c;  // where the opponent placed a piece, the value is -1 if we are in the first round
     int *op_r;
+    pthread_cond_t *over_cv;
+    pthread_mutex_t *over_m;
+    pthread_cond_t *input_cv;
+    pthread_mutex_t *input_m;
+    pthread_cond_t *oppo_cv;
+    pthread_mutex_t *oppo_m;
+    int *client_fd;
 } game_stat_s;
 
 // struct for read input
