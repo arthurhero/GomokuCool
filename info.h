@@ -46,26 +46,4 @@ typedef struct game_stat {
     int *client_fd;
 } game_stat_s;
 
-// struct for read input
-typedef struct user_input {
-    int *status; //our status
-    int *input;
-} user_input_s;
-
-// structs for opponent inputs
-typedef struct op_info {
-    int *status; //our status
-    int *r;
-    int *c;
-    int *op_status;
-    bool *offline;
-} op_info_s;
-
-// structs for send inputs
-typedef struct send_info {
-    int r;
-    int c;
-    int status;
-} send_info_s;
-
 #endif

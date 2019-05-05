@@ -75,8 +75,11 @@ static void* get_opponent_input(void *arg) {
                 break;
             }
             //finished reading
-            // draw the board
-            draw_piece(*game_stat->op_c,*game_stat->op_r,'@');
+            // update and draw the board
+            if (*game_stat->status==RUNNING) {
+                game_stat->board[*game_stat->op_r][*game_stat->op_c]=GUEST;
+                draw_piece(*game_stat->op_c,*game_stat->op_r,'@');
+            }
             //signal the user input thread
             *game_stat->myturn = true;
             pthread_mutex_lock(game_stat->oppo_m);
