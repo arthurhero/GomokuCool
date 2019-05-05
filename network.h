@@ -111,7 +111,7 @@ static int send_input(int client_fd, int r, int c, int status) {
         close(client_fd);
         return -1;
     }
-    rc=write(client_fd,&result,sizeof(int));
+    rc=write(client_fd,&status,sizeof(int));
     if (rc == -1) {
         close(client_fd);
         return -1;
