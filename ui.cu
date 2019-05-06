@@ -287,6 +287,14 @@ void* read_input(void* stat){
       break;
     }
 
+    // Print current player name
+    move(screen_row(BOARD_DIM*2 + 3),screen_col(4*BOARD_DIM/2 - 8));
+    if(*game_stat->host){
+      printw("CURRENT : HOST");
+    }else{
+      printw("CURRENT : GUEST");
+    }
+
     // Handle the key press
     if(key == UP && *game_stat->cur_r != 0) {
       *game_stat->cur_r -= 1;
@@ -332,6 +340,13 @@ void* read_input(void* stat){
 
     }
   }else{
+  // Print current player name
+  move(screen_row(BOARD_DIM*2 + 3),screen_col(4*BOARD_DIM/2 - 8));
+  if(*game_stat->host){
+    printw("CURRENT : GUEST");
+  }else{
+    printw("CURRENT : HOST");
+  }
     continue;
   }
 

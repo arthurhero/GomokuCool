@@ -71,11 +71,12 @@ static int server_socket_open(unsigned short* port) {
   }
 
   // Set up the server socket to listen
-  struct sockaddr_in addr = {
-    .sin_family = AF_INET,          // This is an internet socket
-    .sin_addr.s_addr = INADDR_ANY,  // Listen for connections from any client
-    .sin_port = htons(*port)        // Use the specified port (may be zero)
-  };
+  struct sockaddr_in addr;
+  memset(&addr, 0, sizeof(struct sockaddr_in));
+  addr.sin_family = AF_INET;  // This is an internet socket
+  addr.sin_addr.s_addr = INADDR_ANY;  // Listen for connections from any client
+  addr.sin_port = htons(*port);        // Use the specified port (may be zero)
+
 
   // Bind the server socket to the address. Return if there is an error.
   if(bind(fd, (struct sockaddr*)&addr, sizeof(struct sockaddr_in))) {

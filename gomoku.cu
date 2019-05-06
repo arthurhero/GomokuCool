@@ -10,11 +10,10 @@
 #include <pthread.h>
 
 #include "socket.h"
+#include "gpu.h"
+#include "util.h"
 #include "info.h"
 #include "network.h"
-
-//gpu methods
-void check_board(int** board, int* res);
 
 /**
  * In-memory representation of the game board
@@ -34,8 +33,11 @@ bool myturn;
 // current location of user cursor 
 int cur_r=BOARD_DIM/2,cur_c=BOARD_DIM/2;
 
+// location of opponent cursor
+int op_c=-1, op_r=-1;
+
 // Entry point: Set up the game, create jobs, then run the scheduler
-int main(void) {
+int main(int argc, char** argv) {
   int rc;
 
   // Initialize the ncurses window
@@ -50,7 +52,7 @@ int main(void) {
   
   noecho();               // Don't print keys when pressed
   keypad(mainwin, true);  // Support arrow keys
-  nodelay(mainwin, true); // Non-blocking keyboard access
+  //nodelay(mainwin, true); // Non-blocking keyboard access
 
   // Check the argument number is correct
   if(argc != 1 && argc != 3) {
@@ -59,7 +61,7 @@ int main(void) {
   }
 
   int server_socket_fd;
-  int server_port;
+  unsigned short server_port;
   int socket_fd;
 
   // Check whether we want to connect to other game room
@@ -99,6 +101,9 @@ int main(void) {
   // Display the game board
   init_board();
 
+  //start the game
+  status = RUNNING;
+
   // Thread handles for each of the game threads
   pthread_t read_input_thread;
   pthread_t read_opponent_thread; 
@@ -106,7 +111,7 @@ int main(void) {
   // input for threads 
   game_stat_s *gstat = (game_stat_s *)malloc(sizeof(game_stat_s));
   gstat->host = &host;
-  gstat->board = board;
+  gstat->board = (int **)board;
   gstat->myturn = &myturn;
   gstat->status = &status;
   gstat->cur_c = &cur_c;
