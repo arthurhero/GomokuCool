@@ -271,13 +271,20 @@ void draw_piece(int cur_col, int cur_row, char piece){
 /**
  * Run in a thread to process user input.
  */
-/*
 void* read_input(void* stat){
   game_stat_s* game_stat = (game_stat_s*)stat;
 
   //Should I change it here?
   while(*game_stat->status == RUNNING) {
     if(*game_stat->myturn){
+      // Print current player name
+      move(screen_row(BOARD_DIM*2 + 1),screen_col(4*BOARD_DIM/2 - 8));
+      if(*game_stat->host){
+        printw("CURRENT : HOST");
+      }else{
+        printw("CURRENT : GUEST");
+      }
+
     // Read a character, potentially blocking this thread until a key is pressed
     int key = (int) getch();
 
@@ -289,13 +296,8 @@ void* read_input(void* stat){
       break;
     }
 
-    // Print current player name
-    move(screen_row(BOARD_DIM*2 + 1),screen_col(4*BOARD_DIM/2 - 8));
-    if(*game_stat->host){
-      printw("CURRENT : HOST");
-    }else{
-      printw("CURRENT : GUEST");
-    }
+    // Draw Current bracket
+    draw_bracket(*game_stat->cur_c, *game_stat->cur_r, *game_stat->cur_c, *game_stat->cur_r);
 
     // Handle the key press
     if(key == UP && *game_stat->cur_r != 0) {
@@ -358,7 +360,7 @@ void* read_input(void* stat){
  pthread_mutex_lock(game_stat->over_m);
  return NULL;
 }
-*/
+
 
 
 /**
