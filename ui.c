@@ -11,7 +11,6 @@
 
 #include "info.h"
 #include "network.h"
-#include "gpu.h"
 
 /**
  * Convert a board row number to a screen position
@@ -271,7 +270,6 @@ void draw_piece(int cur_col, int cur_row, char piece){
 /**
  * Run in a thread to process user input.
  */
-/*
 void* read_input(void* stat){
   game_stat_s* game_stat = (game_stat_s*)stat;
 
@@ -308,7 +306,7 @@ void* read_input(void* stat){
       break;
     } else if(key == '\n'){
       // Update game status
-      check_board(game_stat->board, game_stat->status);
+      //check_board(game_stat->board, game_stat->status);
 
       char piece = *game_stat->host? 'o': '@';
       draw_piece(*game_stat->cur_c, *game_stat->cur_r, piece);
@@ -343,7 +341,6 @@ void* read_input(void* stat){
  pthread_mutex_lock(game_stat->over_m);
  return NULL;
 }
-*/
 
 
 /**
@@ -371,6 +368,7 @@ void end_game(int winner) {
   //readchar();
 }
 
+/*
 int main(){
   // Initialize the ncurses window
   WINDOW* mainwin = initscr();
@@ -415,3 +413,4 @@ int main(){
 
   return 0;
 }
+*/

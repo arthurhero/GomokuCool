@@ -10,10 +10,11 @@
 #include <pthread.h>
 
 #include "socket.h"
-#include "gpu.h"
 #include "info.h"
 #include "network.h"
 
+//gpu methods
+void check_board(int** board, int* res);
 
 /**
  * In-memory representation of the game board
