@@ -9,8 +9,8 @@
 #include <unistd.h>
 #include <pthread.h>
 
-#include "util.h"
 #include "gpu.h"
+#include "util.h"
 #include "info.h"
 #include "network.h"
 
@@ -33,8 +33,11 @@ bool myturn;
 // current location of user cursor 
 int cur_r=BOARD_DIM/2,cur_c=BOARD_DIM/2;
 
+// location of opponent cursor
+int op_c=-1, op_r=-1;
+
 // Entry point: Set up the game, create jobs, then run the scheduler
-int main(void) {
+int main(int argc, char** argv) {
   int rc;
 
   // Initialize the ncurses window
