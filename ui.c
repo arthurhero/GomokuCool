@@ -320,9 +320,14 @@ void* read_input(void* stat){
       // Update game status
       check_board(game_stat->board, game_stat->status);
 
+      // Draw the piece we just placed
       char piece = *game_stat->host? 'o': '@';
       draw_piece(*game_stat->cur_c, *game_stat->cur_r, piece);
 
+      // Update our board
+      int player = *game_stat->host? HOST: GUEST;
+      game_stat->board[*game_stat->cur_r][*game_stat->cur_c] = player;
+      
       // Send position and result
       if(send_input(*game_stat->client_fd, *game_stat->cur_r, *game_stat->cur_c, *game_stat->status) == -1){
         *game_stat->status = WAITING;
