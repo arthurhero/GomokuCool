@@ -34,7 +34,7 @@ bool myturn;
 int cur_r=BOARD_DIM/2,cur_c=BOARD_DIM/2;
 
 // location of opponent cursor
-int op_c=-1, op_r=-1;
+int op_c=BOARD_DIM/2, op_r=BOARD_DIM/2;
 
 // Entry point: Set up the game, create jobs, then run the scheduler
 int main(int argc, char** argv) {

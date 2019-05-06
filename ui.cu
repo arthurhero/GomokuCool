@@ -273,11 +273,25 @@ void draw_piece(int cur_col, int cur_row, char piece){
 void* read_input(void* stat){
   game_stat_s* game_stat = (game_stat_s*)stat;
 
+  // Draw Current bracket
+  if (*game_stat->host) {
+    draw_bracket(*game_stat->cur_c, *game_stat->cur_r, *game_stat->cur_c, *game_stat->cur_r);
+  }
+
   //Should I change it here?
   while(*game_stat->status == RUNNING) {
     if(*game_stat->myturn){
+      // Print current player name
+      move(screen_row(BOARD_DIM*2 + 3),screen_col(4*BOARD_DIM/2 - 8));
+      if(*game_stat->host){
+        printw("CURRENT : HOST");
+      }else{
+        printw("CURRENT : GUEST");
+      }
+
     // Read a character, potentially blocking this thread until a key is pressed
     int key = (int) getch();
+    fprintf(stderr, "%d\n",key);
 
     // Make sure the input was read correctly
     if(key == ERR) {
@@ -287,25 +301,20 @@ void* read_input(void* stat){
       break;
     }
 
-    // Print current player name
-    move(screen_row(BOARD_DIM*2 + 3),screen_col(4*BOARD_DIM/2 - 8));
-    if(*game_stat->host){
-      printw("CURRENT : HOST");
-    }else{
-      printw("CURRENT : GUEST");
-    }
+    // Draw Current bracket
+    draw_bracket(*game_stat->cur_c, *game_stat->cur_r, *game_stat->cur_c, *game_stat->cur_r);
 
     // Handle the key press
-    if(key == UP && *game_stat->cur_r != 0) {
+    if(key == KEY_UP && *game_stat->cur_r != 0) {
       *game_stat->cur_r -= 1;
       draw_bracket(*game_stat->cur_c, *game_stat->cur_r+1, *game_stat->cur_c, *game_stat->cur_r);
-    } else if(key == RIGHT && *game_stat->cur_c != (BOARD_DIM-1)) {
+    } else if(key == KEY_RIGHT && *game_stat->cur_c != (BOARD_DIM-1)) {
       *game_stat->cur_c += 1;
       draw_bracket(*game_stat->cur_c-1, *game_stat->cur_r, *game_stat->cur_c, *game_stat->cur_r);
-    } else if(key == DOWN && *game_stat->cur_r != (BOARD_DIM-1)) {
+    } else if(key == KEY_DOWN && *game_stat->cur_r != (BOARD_DIM-1)) {
       *game_stat->cur_r += 1;
       draw_bracket(*game_stat->cur_c, *game_stat->cur_r-1, *game_stat->cur_c, *game_stat->cur_r);
-    } else if(key == LEFT && *game_stat->cur_c != 0) {
+    } else if(key == KEY_LEFT && *game_stat->cur_c != 0) {
       *game_stat->cur_c -= 1;
       draw_bracket(*game_stat->cur_c+1, *game_stat->cur_r, *game_stat->cur_c, *game_stat->cur_r);
     } else if(key == 'q') {
