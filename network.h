@@ -77,15 +77,11 @@ static void* get_opponent_input(void *arg) {
             }
             //finished reading
             // update and draw the board
-            fprintf(stderr, "finished reading! %d %d %d\n",*game_stat->op_r,*game_stat->op_c,*game_stat->status);
             if (*game_stat->status==RUNNING) {
-                game_stat->board[0][0]=GUEST;
                 int player = *game_stat->host ? HOST : GUEST;
-                //game_stat->board[*game_stat->op_r][*game_stat->op_c]=player;
-                fprintf(stderr, "finished setting!\n");
+                game_stat->board[*game_stat->op_r][*game_stat->op_c]=player;
                 char piece = *game_stat->host ? 'o' : '@';
                 draw_piece(*game_stat->op_c,*game_stat->op_r,piece);
-                fprintf(stderr, "finished drawing!\n");
             }
             //signal the user input thread
             *game_stat->myturn = true;

@@ -278,6 +278,13 @@ void* read_input(void* stat){
     draw_bracket(*game_stat->cur_c, *game_stat->cur_r, *game_stat->cur_c, *game_stat->cur_r);
   }
 
+  move(screen_row(BOARD_DIM*2 + 3),screen_col(4*BOARD_DIM/2 - 8));
+  if(*game_stat->host){
+    printw("CURRENT : HOST");
+  }else{
+    printw("CURRENT : GUEST");
+  }
+
   //Should I change it here?
   while(*game_stat->status == RUNNING) {
     if(*game_stat->myturn){
@@ -291,7 +298,6 @@ void* read_input(void* stat){
 
     // Read a character, potentially blocking this thread until a key is pressed
     int key = (int) getch();
-    fprintf(stderr, "%d\n",key);
 
     // Make sure the input was read correctly
     if(key == ERR) {

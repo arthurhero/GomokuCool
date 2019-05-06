@@ -20,7 +20,7 @@
  * 0 represents a white piece
  * 1 represents a black piece
  */
-int board[BOARD_DIM][BOARD_DIM];
+int **board;
 
 // status of running or winning or losing
 int status = WAITING;
@@ -40,16 +40,21 @@ int op_c=BOARD_DIM/2, op_r=BOARD_DIM/2;
 int main(int argc, char** argv) {
   int rc;
 
+  //allocate board
+  board = (int **)malloc(BOARD_DIM * sizeof(int*)); 
+  for (int i=0; i<BOARD_DIM; i++) 
+      board[i] = (int*)calloc(BOARD_DIM, sizeof(int)); 
+
   // Initialize the ncurses window
   WINDOW* mainwin = initscr();
   if(mainwin == NULL) {
-    fprintf(stderr, "Error initializing ncurses.\n");
-    exit(2);
+      fprintf(stderr, "Error initializing ncurses.\n");
+      exit(2);
   }
-  
+
   // Seed random number generator with the time in milliseconds
   srand(time_ms());
-  
+
   noecho();               // Don't print keys when pressed
   keypad(mainwin, true);  // Support arrow keys
   //nodelay(mainwin, true); // Non-blocking keyboard access
@@ -81,7 +86,7 @@ int main(int argc, char** argv) {
   }
 
   // Zero out the board contents
-  memset(board, BLANK, BOARD_DIM*BOARD_DIM*sizeof(int));
+  //memset(board, BLANK, BOARD_DIM*BOARD_DIM*sizeof(int));
 
   // Host play first
   if (host) {
