@@ -11,6 +11,7 @@
 
 #include "info.h"
 #include "network.h"
+#include "gpu.h"
 
 /**
  * Convert a board row number to a screen position
@@ -68,7 +69,7 @@ void init_home(int port_num){
 /**
  * Initialize the board, by printing the title and edges.
  */
-void init_board() {
+void init_board(bool host) {
   // Erase greeting prompt First
   erase();
 
@@ -135,119 +136,28 @@ void init_board() {
     addch('-');
     addch('-');
   }
-
- refresh();
-}
-
-/**
- * Run in a thread to draw the current state of the game board.
-
-void* draw_board(void* stat){
-  game_stat_s* game_stat = (game_stat_s*)stat;
-
-  int toggle_turn = false;
-  bool prev_my_turn = *game_stat->myturn;
-  int prev_row = *game_stat->cur_c;
-  int prev_col = *game_stat->cur_r;
-
-  // Keep updataing the board while the game is running
-  while(game_stat->status == RUNNING){
-
-    // Determine if we just changed player
-    if(*game_stat->myturn != prev_my_turn) {
-      toggle_turn = true;
-    }else{
-      toggle_turn = false;
-    }
-
-    // Update game status
-    bool draw_bracket = *game_stat->bracket;
-    bool my_turn = *game_stat->myturn;
-    int cur_col = *game_stat->cur_c;
-    int cur_row = *game_stat->cur_r;
-
-    if(my_turn){
-      // If the turn has not been toggled erase the previous [] we drew
-      if(!toggle_turn){
-        //First, move to the previous location
-        move((prev_col+1)*4-1, (prev_row-2)/2);
-
-        //Next, draw blanks to cover the current [] that is there
-        addch(' ');
-        addch(' ');
-        addch(' ');
-      }
-
-      // Draw bracket or a piece
-      if(draw_bracket){
-        // move to the current position in board
-        move((cur_col+1)*4-1, (cur_row-2)/2);
-
-        // Draw bracket
-        addch('[');
-        addch(' ');
-        addch(']');
-
-      }else{ // draw piece
-        // move to the current position in board
-        move((cur_col+1)*4-1, (cur_row-2)/2);
-
-        bool host_piece = *game_stat->host;
-
-        if(host_piece){
-          addch('@');
-        }else{
-          addch('o');
-        }
-
-      }
-    }
-
-    // Repetitively draw opponent's piece
-      int op_col = *game_stat->op_c;
-      int op_row = *game_stat->op_r;
-      // move to the current position in board
-      move((op_c+1)*4, (op_r-2)/2);
-
-      bool host_piece = *game_stat->host;
-
-      // make sure that we are not in the first round (i.e. there is no opponent piece yet)
-      if(op_col != -1 && op_row != -1){
-      // print piece
-      if(host_piece){
-        addch('@');
-      }else{
-        addch('o');
-      }
-    }
-
-  prev_my_turn = my_turn;
-  prev_col = cur_col;
-  prev_row = cur_row;
   refresh();
- }
-
-  return NULL;
 }
-*/
 
 /**
  * Draw bracket
  */
 void draw_bracket(int prev_col, int prev_row, int cur_col, int cur_row){
   //First, move to the previous location
-  move(screen_row(prev_row*2 > 2? prev_row*2 +2 : 2),screen_col((prev_col+1)*4-3));
+  move(screen_row(prev_row*2 >= 2? prev_row*2 +2 : 2),screen_col((prev_col+1)*4-3));
 
   //Next, draw blanks to cover the current [] that is there
   addch(' ');
-  addch(' ');
+  //addch(' ');
+  move(screen_row(prev_row*2 >= 2? prev_row*2 +2 : 2),screen_col((prev_col+1)*4-1));
   addch(' ');
 
-  move(screen_row(cur_row*2 > 2? cur_row*2 +2: 2),screen_col((cur_col+1)*4-3));
+  move(screen_row(cur_row*2 >= 2? cur_row*2 +2: 2),screen_col((cur_col+1)*4-3));
 
   // Draw bracket
   addch('[');
-  addch(' ');
+  //addch(' ');
+  move(screen_row(cur_row*2 >= 2 ? cur_row*2 +2: 2),screen_col((cur_col+1)*4-1));
   addch(']');
 
   refresh();
@@ -257,14 +167,14 @@ void draw_bracket(int prev_col, int prev_row, int cur_col, int cur_row){
  * Draw piece
  */
 void draw_piece(int cur_col, int cur_row, char piece){
-   // Draw piece
-   move(screen_row(cur_row*2 > 2? cur_row*2 +2 : 2),screen_col((cur_col+1)*4-3));
+  // Draw piece
+  move(screen_row(cur_row*2 >= 2? cur_row*2 +2 : 2),screen_col((cur_col+1)*4-3));
 
-   addch(' ');
-   addch(piece);
-   addch(' ');
+  addch(' ');
+  addch(piece);
+  addch(' ');
 
-   refresh();
+  refresh();
 }
 
 /**
@@ -278,103 +188,127 @@ void* read_input(void* stat){
     draw_bracket(*game_stat->cur_c, *game_stat->cur_r, *game_stat->cur_c, *game_stat->cur_r);
   }
 
+  // Draw current status
   move(screen_row(BOARD_DIM*2 + 3),screen_col(4*BOARD_DIM/2 - 8));
-  if(*game_stat->host){
-    printw("CURRENT : HOST");
+  if(*game_stat->myturn){
+    printw("Your Turn!");
   }else{
-    printw("CURRENT : GUEST");
+    printw("Opponent's Turn");
   }
+
 
   //Should I change it here?
   while(*game_stat->status == RUNNING) {
+    // Update game status
+    check_board(game_stat->board, game_stat->status);
+    if (*game_stat->status != RUNNING) {
+      break;
+    }
+
     if(*game_stat->myturn){
-      // Print current player name
+      // Update Turn 
       move(screen_row(BOARD_DIM*2 + 3),screen_col(4*BOARD_DIM/2 - 8));
-      if(*game_stat->host){
-        printw("CURRENT : HOST");
-      }else{
-        printw("CURRENT : GUEST");
-      }
+      printw("               ");
+      move(screen_row(BOARD_DIM*2 + 3),screen_col(4*BOARD_DIM/2 - 8));
+      if (*game_stat->myturn) {
+        printw("Your Turn");
+      } else {
+        printw("Opponent's Turn");
+      }  
+      // Read a character, potentially blocking this thread until a key is pressed
+      int key = (int) getch();
 
-    // Read a character, potentially blocking this thread until a key is pressed
-    int key = (int) getch();
-
-    // Make sure the input was read correctly
-    if(key == ERR) {
-      *game_stat->status = WAITING;
-      send_input(*game_stat->client_fd, *game_stat->cur_r, *game_stat->cur_c, *game_stat->status);
-      fprintf(stderr, "ERROR READING INPUT\n");
-      break;
-    }
-
-    // Draw Current bracket
-    draw_bracket(*game_stat->cur_c, *game_stat->cur_r, *game_stat->cur_c, *game_stat->cur_r);
-
-    // Handle the key press
-    if(key == KEY_UP && *game_stat->cur_r != 0) {
-      *game_stat->cur_r -= 1;
-      draw_bracket(*game_stat->cur_c, *game_stat->cur_r+1, *game_stat->cur_c, *game_stat->cur_r);
-    } else if(key == KEY_RIGHT && *game_stat->cur_c != (BOARD_DIM-1)) {
-      *game_stat->cur_c += 1;
-      draw_bracket(*game_stat->cur_c-1, *game_stat->cur_r, *game_stat->cur_c, *game_stat->cur_r);
-    } else if(key == KEY_DOWN && *game_stat->cur_r != (BOARD_DIM-1)) {
-      *game_stat->cur_r += 1;
-      draw_bracket(*game_stat->cur_c, *game_stat->cur_r-1, *game_stat->cur_c, *game_stat->cur_r);
-    } else if(key == KEY_LEFT && *game_stat->cur_c != 0) {
-      *game_stat->cur_c -= 1;
-      draw_bracket(*game_stat->cur_c+1, *game_stat->cur_r, *game_stat->cur_c, *game_stat->cur_r);
-    } else if(key == 'q') {
-      *game_stat->status = WAITING;
-      send_input(*game_stat->client_fd, *game_stat->cur_r, *game_stat->cur_c, *game_stat->status);
-      break;
-    } else if(key == '\n'){
-      // Update game status
-      //check_board(game_stat->board, game_stat->status);
-
-      // Draw the piece we just placed
-      char piece = *game_stat->host? 'o': '@';
-      draw_piece(*game_stat->cur_c, *game_stat->cur_r, piece);
-
-      // Update our board
-      int player = *game_stat->host? HOST: GUEST;
-      game_stat->board[*game_stat->cur_r][*game_stat->cur_c] = player;
-      
-      // Send position and result
-      if(send_input(*game_stat->client_fd, *game_stat->cur_r, *game_stat->cur_c, *game_stat->status) == -1){
+      // Make sure the input was read correctly
+      if(key == ERR) {
         *game_stat->status = WAITING;
+        send_input(*game_stat->client_fd, *game_stat->cur_r, *game_stat->cur_c, *game_stat->status);
+        fprintf(stderr, "ERROR READING INPUT\n");
+        break;
       }
 
-      // Signal input_cv
-      pthread_mutex_lock(game_stat->input_m);
-      pthread_cond_signal(game_stat->input_cv);
-      pthread_mutex_unlock(game_stat->input_m);
 
-      *game_stat->myturn = false;
 
-      // Wait for opponent to make decision
-      pthread_mutex_lock(game_stat->oppo_m);
-      while(*game_stat->myturn == false){
-        pthread_cond_wait(game_stat->oppo_cv, game_stat->oppo_m);
-      }
-      pthread_mutex_unlock(game_stat->oppo_m);
+      // Draw Current bracket
+      draw_bracket(*game_stat->cur_c, *game_stat->cur_r, *game_stat->cur_c, *game_stat->cur_r);
 
+      // Handle the key press
+      if(key == KEY_UP && *game_stat->cur_r != 0) {
+        *game_stat->cur_r -= 1;
+        draw_bracket(*game_stat->cur_c, *game_stat->cur_r+1, *game_stat->cur_c, *game_stat->cur_r);
+      } else if(key == KEY_RIGHT && *game_stat->cur_c != (BOARD_DIM-1)) {
+        *game_stat->cur_c += 1;
+        draw_bracket(*game_stat->cur_c-1, *game_stat->cur_r, *game_stat->cur_c, *game_stat->cur_r);
+      } else if(key == KEY_DOWN && *game_stat->cur_r != (BOARD_DIM-1)) {
+        *game_stat->cur_r += 1;
+        draw_bracket(*game_stat->cur_c, *game_stat->cur_r-1, *game_stat->cur_c, *game_stat->cur_r);
+      } else if(key == KEY_LEFT && *game_stat->cur_c != 0) {
+        *game_stat->cur_c -= 1;
+        draw_bracket(*game_stat->cur_c+1, *game_stat->cur_r, *game_stat->cur_c, *game_stat->cur_r);
+      } else if(key == 'q') {
+        *game_stat->status = WAITING;
+        send_input(*game_stat->client_fd, *game_stat->cur_r, *game_stat->cur_c, *game_stat->status);
+        break;
+      } else if(key == '\n'){
+        // Skip already occupied cell
+        if (game_stat->board[*game_stat->cur_r][*game_stat->cur_c] != BLANK) {
+          continue;
+        }
+        // Draw the piece we just placed
+        char piece = *game_stat->host? 'o': '@';
+        draw_piece(*game_stat->cur_c, *game_stat->cur_r, piece);
+
+        // Update our board
+        int player = *game_stat->host? HOST: GUEST;
+        game_stat->board[*game_stat->cur_r][*game_stat->cur_c] = player;
+
+        // Send position and result
+        if(send_input(*game_stat->client_fd, *game_stat->cur_r, *game_stat->cur_c, *game_stat->status) == -1){
+          *game_stat->status = WAITING;
+        }
+        
+        *game_stat->myturn = false;
+
+        // Signal input_cv
+        pthread_mutex_lock(game_stat->input_m);
+        pthread_cond_signal(game_stat->input_cv);
+        pthread_mutex_unlock(game_stat->input_m);
+
+         // Update Turn 
+        move(screen_row(BOARD_DIM*2 + 3),screen_col(4*BOARD_DIM/2 - 8));
+        printw("   Your Turn   ");
+        refresh();
+     }
+    }else{
+        // Update Turn 
+        move(screen_row(BOARD_DIM*2 + 3),screen_col(4*BOARD_DIM/2 - 8));
+        printw(" Opponent Turn ");
+      
+        refresh();
+        // Wait for opponent to make decision
+        pthread_mutex_lock(game_stat->oppo_m);
+        while(*game_stat->myturn == false){
+          pthread_cond_wait(game_stat->oppo_cv, game_stat->oppo_m);
+        }
+        pthread_mutex_unlock(game_stat->oppo_m);
+
+
+      /*move(screen_row(BOARD_DIM*2 + 3),screen_col(4*BOARD_DIM/2 - 8));
+        printw("               ");
+        move(screen_row(BOARD_DIM*2 + 3),screen_col(4*BOARD_DIM/2 - 8));
+        if(*game_stat->myturn){
+        printw("Oppt's Turn");
+        }else{
+        printw("Your Turn");
+        }*/
+      continue;
     }
-  }else{
-  // Print current player name
-  move(screen_row(BOARD_DIM*2 + 3),screen_col(4*BOARD_DIM/2 - 8));
-  if(*game_stat->host){
-    printw("CURRENT : GUEST");
-  }else{
-    printw("CURRENT : HOST");
-  }
-    continue;
-  }
 
-}
- pthread_mutex_lock(game_stat->over_m);
- pthread_cond_signal(game_stat->over_cv);
- pthread_mutex_lock(game_stat->over_m);
- return NULL;
+
+  }
+  pthread_mutex_lock(game_stat->over_m);
+  pthread_cond_signal(game_stat->over_cv);
+  pthread_mutex_unlock(game_stat->over_m);
+  return NULL;
 }
 
 
@@ -382,6 +316,7 @@ void* read_input(void* stat){
  * Show a game over message & winner information, and wait for a key press.
  */
 void end_game(int winner) {
+  erase();
   mvprintw(screen_row(BOARD_DIM/2)-2, screen_col(BOARD_DIM/2)-6, "            ");
   mvprintw(screen_row(BOARD_DIM/2)-1, screen_col(BOARD_DIM/2)-6, " Game Over! ");
 
@@ -397,55 +332,54 @@ void end_game(int winner) {
   }
 
   mvprintw(screen_row(BOARD_DIM/2)+1, screen_col(BOARD_DIM/2)-6, "            ");
-  mvprintw(screen_row(BOARD_DIM/2)+2, screen_col(BOARD_DIM/2)-11, "Press any key to exit.");
   refresh();
   timeout(-1);
   //readchar();
 }
 
 /*
-int main(){
-  // Initialize the ncurses window
-  WINDOW* mainwin = initscr();
-  if(mainwin == NULL) {
-    fprintf(stderr, "Error initializing ncurses.\n");
-    exit(2);
-  }
-
-  //init_home(12345);
-
-
-  game_stat_s st;
-  int col = 5;
-  int row = 6;
-  bool host = false;
-
-  st.cur_c = &col;
-  st.cur_r = &row;
-  st.host = &host;
-
-  init_home(2345);
-  sleep(2);
-  init_board();
-  draw_bracket(1,1,2,2);
-  sleep(2);
-  draw_bracket(2,2,3,4);
-  sleep(2);
-  //draw_bracket(3,4,11,14);
-  //sleep(2);
-  //draw_bracket(11,14,7,9);
-  //sleep(2);
-  draw_piece(2,3,'@');
-  sleep(2);
-  draw_piece(5,6,'@');
-  sleep(2);
-  draw_piece(0,0,'o');
-  sleep(2);
-  //draw_piece(1,14,'o');
-  // Clean up window
-  delwin(mainwin);
-  endwin();
-
-  return 0;
+   int main(){
+// Initialize the ncurses window
+WINDOW* mainwin = initscr();
+if(mainwin == NULL) {
+fprintf(stderr, "Error initializing ncurses.\n");
+exit(2);
 }
-*/
+
+//init_home(12345);
+
+
+game_stat_s st;
+int col = 5;
+int row = 6;
+bool host = false;
+
+st.cur_c = &col;
+st.cur_r = &row;
+st.host = &host;
+
+init_home(2345);
+sleep(2);
+init_board();
+draw_bracket(1,1,2,2);
+sleep(2);
+draw_bracket(2,2,3,4);
+sleep(2);
+//draw_bracket(3,4,11,14);
+//sleep(2);
+//draw_bracket(11,14,7,9);
+//sleep(2);
+draw_piece(2,3,'@');
+sleep(2);
+draw_piece(5,6,'@');
+sleep(2);
+draw_piece(0,0,'o');
+sleep(2);
+//draw_piece(1,14,'o');
+// Clean up window
+delwin(mainwin);
+endwin();
+
+return 0;
+}
+ */

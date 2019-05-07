@@ -78,24 +78,25 @@ static void* get_opponent_input(void *arg) {
             //finished reading
             // update and draw the board
             if (*game_stat->status==RUNNING) {
-                int player = *game_stat->host ? HOST : GUEST;
+                int player = *game_stat->host ? GUEST : HOST;
                 game_stat->board[*game_stat->op_r][*game_stat->op_c]=player;
-                char piece = *game_stat->host ? 'o' : '@';
+                char piece = *game_stat->host ? '@' : 'o';
                 draw_piece(*game_stat->op_c,*game_stat->op_r,piece);
             }
-            //signal the user input thread
-            *game_stat->myturn = true;
+           *game_stat->myturn = true;
+
+           //signal the user input thread
             pthread_mutex_lock(game_stat->oppo_m);
             pthread_cond_signal(game_stat->oppo_cv);
             pthread_mutex_unlock(game_stat->oppo_m);
-            //wait for opponent's turn
-            pthread_mutex_lock(game_stat->input_m);
-            while (*game_stat->myturn) {
-                pthread_cond_wait(game_stat->input_cv,game_stat->input_m);
-            }
-            pthread_mutex_unlock(game_stat->input_m);
         } else {
-            continue;
+          //wait for opponent's turn
+          pthread_mutex_lock(game_stat->input_m);
+          while (*game_stat->myturn) {
+            pthread_cond_wait(game_stat->input_cv,game_stat->input_m);
+          }
+          pthread_mutex_unlock(game_stat->input_m);
+          continue;
         }
     }
     return NULL;
@@ -106,23 +107,23 @@ static void* get_opponent_input(void *arg) {
 // if cannot send, we think opponent quitted, return -1
 // On success, return 0 
 static int send_input(int client_fd, int r, int c, int status) {
-    ssize_t rc;
-    rc=write(client_fd,&r,sizeof(int));
-    if (rc==-1) {
-        close(client_fd);
-        return -1;
-    }
-    rc=write(client_fd,&c,sizeof(int));
-    if (rc==-1) {
-        close(client_fd);
-        return -1;
-    }
-    rc=write(client_fd,&status,sizeof(int));
-    if (rc == -1) {
-        close(client_fd);
-        return -1;
-    }
-    return 0;
+  ssize_t rc;
+  rc=write(client_fd,&r,sizeof(int));
+  if (rc==-1) {
+    close(client_fd);
+    return -1;
+  }
+  rc=write(client_fd,&c,sizeof(int));
+  if (rc==-1) {
+    close(client_fd);
+    return -1;
+  }
+  rc=write(client_fd,&status,sizeof(int));
+  if (rc == -1) {
+    close(client_fd);
+    return -1;
+  }
+  return 0;
 }
 
 #endif

@@ -12,7 +12,7 @@
 #define HOST 1
 #define GUEST 2
 
-#define BOARD_DIM 10
+#define BOARD_DIM 20
 #define BOARD_HEIGHT 2
 #define BOARD_WIDTH 4
 

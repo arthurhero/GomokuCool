@@ -11,9 +11,9 @@
 
 #include "socket.h"
 #include "gpu.h"
-#include "util.h"
 #include "info.h"
 #include "network.h"
+#include "util.h"
 
 /**
  * In-memory representation of the game board
@@ -104,7 +104,7 @@ int main(int argc, char** argv) {
   pthread_mutex_t oppo_m = PTHREAD_MUTEX_INITIALIZER;
 
   // Display the game board
-  init_board();
+  init_board(host);
 
   //start the game
   status = RUNNING;

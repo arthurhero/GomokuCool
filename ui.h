@@ -20,7 +20,7 @@ void init_home(int port_num);
 /**
  * Initialize the board, by printing the title and edges.
  */
-void init_board();
+void init_board(bool host);
 
 /**
  * Run in a thread to draw the current state of the game board.

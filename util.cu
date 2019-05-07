@@ -1,4 +1,4 @@
-#define _GNU_SOURCE
+#define _GNU_SOURCE 98
 
 #include <stdint.h>
 #include <stdio.h>
@@ -33,3 +33,5 @@ size_t time_ms() {
   // Convert timeval values to milliseconds
   return tv.tv_sec*1000 + tv.tv_usec/1000;
 }
+
+
