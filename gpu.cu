@@ -7,12 +7,15 @@
 #include "info.h"
 #include "gpu.h"
 
+// A board of an array of BOARD_DIM *BOARD_DIM cells
 typedef struct board {
   int cells[BOARD_DIM * BOARD_DIM];
 } board_t;
 
-__device__ int status_d = 0;
+// Integer to keep track of current state
+__device__ int status_d = RUNNING;
 
+// Check each cell as the center of its respective 5-piece-line
 __global__ void check_cell(board_t* board) {
   int x = threadIdx.x;
   int y = threadIdx.y;
@@ -30,7 +33,11 @@ __global__ void check_cell(board_t* board) {
 
   // Keep checking the cell until all cells have been checked
   while (__syncthreads_or(cur_check) != 0) {  
+    
+    // turn the flag as checked
     cur_check = 0;
+
+    // Skip if the cell is blank
     if (cur_cell == 0) {
       continue;
     }
@@ -77,7 +84,7 @@ __global__ void check_cell(board_t* board) {
       }
     }
 
-    // Check complete
+    // Check board complete
     int complete = 4;
     for (int r = 0; r < BOARD_DIM; r++) {
       for(int c = 0; c < BOARD_DIM; c++) {
@@ -89,6 +96,8 @@ __global__ void check_cell(board_t* board) {
 
     // Compile results
     int cur_ret = row_s | col_s | rl_s | lr_s | complete;
+    
+    // Update status_d
     if (complete == 4) {
       status_d = complete;
       return;
@@ -100,9 +109,9 @@ __global__ void check_cell(board_t* board) {
   return;
 }
 
-
+// Check if the game has a winner
 void check_board(int** raw_board, int* res) {
-  // Parse raw board
+  // Parse raw board into board struct
   board_t* board = (board_t*) malloc(sizeof(board_t));
   for(int i = 0; i < BOARD_DIM; i++) {
     for(int j = 0; j < BOARD_DIM; j++) {
@@ -139,24 +148,5 @@ void check_board(int** raw_board, int* res) {
   // Free the gpu memory
   cudaFree(gpu_board);
   *res = status_h;
-  //fprintf(stderr, "Current result is %d\n", *res);
 }
 
-/*
-//Test
-int main(int argc, char** argv) {
-  int** testboard;
-  testboard = (int **)malloc(BOARD_DIM * sizeof(int*)); 
-  for (int i=0; i<BOARD_DIM; i++) 
-    testboard[i] = (int*)calloc(BOARD_DIM, sizeof(int)); 
-  testboard[2][4] = 1;
-  testboard[3][4] = 1;
-  testboard[4][4] = 1;
-  testboard[5][4] = 1;
-  testboard[6][4] = 1;
-
-  int res;
-  check_board(testboard, &res);
-  printf("this is a test in main function. Winner is %d\n", res);
-  return 0;
-}*/

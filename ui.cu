@@ -128,7 +128,7 @@ void init_board(bool host) {
   }
 
   // Print the bottom boarder
-//  cur_row_num += 0;
+  //  cur_row_num += 0;
   move(screen_row(++cur_row_num), screen_col(0));
   for(int i = 0; i < BOARD_DIM; i++ ){
     addch(' ');
@@ -148,7 +148,6 @@ void draw_bracket(int prev_col, int prev_row, int cur_col, int cur_row){
 
   //Next, draw blanks to cover the current [] that is there
   addch(' ');
-  //addch(' ');
   move(screen_row(prev_row*2 >= 2? prev_row*2 +2 : 2),screen_col((prev_col+1)*4-1));
   addch(' ');
 
@@ -156,7 +155,6 @@ void draw_bracket(int prev_col, int prev_row, int cur_col, int cur_row){
 
   // Draw bracket
   addch('[');
-  //addch(' ');
   move(screen_row(cur_row*2 >= 2 ? cur_row*2 +2: 2),screen_col((cur_col+1)*4-1));
   addch(']');
 
@@ -226,8 +224,6 @@ void* read_input(void* stat){
         break;
       }
 
-
-
       // Draw Current bracket
       draw_bracket(*game_stat->cur_c, *game_stat->cur_r, *game_stat->cur_c, *game_stat->cur_r);
 
@@ -265,7 +261,7 @@ void* read_input(void* stat){
         if(send_input(*game_stat->client_fd, *game_stat->cur_r, *game_stat->cur_c, *game_stat->status) == -1){
           *game_stat->status = WAITING;
         }
-        
+
         *game_stat->myturn = false;
 
         // Signal input_cv
@@ -273,38 +269,30 @@ void* read_input(void* stat){
         pthread_cond_signal(game_stat->input_cv);
         pthread_mutex_unlock(game_stat->input_m);
 
-         // Update Turn 
+        // Update Turn 
         move(screen_row(BOARD_DIM*2 + 3),screen_col(4*BOARD_DIM/2 - 8));
         printw("   Your Turn   ");
         refresh();
-     }
+      }
     }else{
-        // Update Turn 
-        move(screen_row(BOARD_DIM*2 + 3),screen_col(4*BOARD_DIM/2 - 8));
-        printw(" Opponent Turn ");
-      
-        refresh();
-        // Wait for opponent to make decision
-        pthread_mutex_lock(game_stat->oppo_m);
-        while(*game_stat->myturn == false){
-          pthread_cond_wait(game_stat->oppo_cv, game_stat->oppo_m);
-        }
-        pthread_mutex_unlock(game_stat->oppo_m);
+      // Update Turn 
+      move(screen_row(BOARD_DIM*2 + 3),screen_col(4*BOARD_DIM/2 - 8));
+      printw(" Opponent Turn ");
 
+      refresh();
+      // Wait for opponent to make decision
+      pthread_mutex_lock(game_stat->oppo_m);
+      while(*game_stat->myturn == false){
+        pthread_cond_wait(game_stat->oppo_cv, game_stat->oppo_m);
+      }
+      pthread_mutex_unlock(game_stat->oppo_m);
 
-      /*move(screen_row(BOARD_DIM*2 + 3),screen_col(4*BOARD_DIM/2 - 8));
-        printw("               ");
-        move(screen_row(BOARD_DIM*2 + 3),screen_col(4*BOARD_DIM/2 - 8));
-        if(*game_stat->myturn){
-        printw("Oppt's Turn");
-        }else{
-        printw("Your Turn");
-        }*/
       continue;
     }
 
 
   }
+  // Signal the game over lock
   pthread_mutex_lock(game_stat->over_m);
   pthread_cond_signal(game_stat->over_cv);
   pthread_mutex_unlock(game_stat->over_m);
@@ -334,52 +322,5 @@ void end_game(int winner) {
   mvprintw(screen_row(BOARD_DIM/2)+1, screen_col(BOARD_DIM/2)-6, "            ");
   refresh();
   timeout(-1);
-  //readchar();
 }
 
-/*
-   int main(){
-// Initialize the ncurses window
-WINDOW* mainwin = initscr();
-if(mainwin == NULL) {
-fprintf(stderr, "Error initializing ncurses.\n");
-exit(2);
-}
-
-//init_home(12345);
-
-
-game_stat_s st;
-int col = 5;
-int row = 6;
-bool host = false;
-
-st.cur_c = &col;
-st.cur_r = &row;
-st.host = &host;
-
-init_home(2345);
-sleep(2);
-init_board();
-draw_bracket(1,1,2,2);
-sleep(2);
-draw_bracket(2,2,3,4);
-sleep(2);
-//draw_bracket(3,4,11,14);
-//sleep(2);
-//draw_bracket(11,14,7,9);
-//sleep(2);
-draw_piece(2,3,'@');
-sleep(2);
-draw_piece(5,6,'@');
-sleep(2);
-draw_piece(0,0,'o');
-sleep(2);
-//draw_piece(1,14,'o');
-// Clean up window
-delwin(mainwin);
-endwin();
-
-return 0;
-}
- */
